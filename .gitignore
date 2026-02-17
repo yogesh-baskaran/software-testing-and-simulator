@@ -23,11 +23,7 @@ pom.xml.next
 release.properties
 releases/
 
-### Test Files ###
-# Exclude parameterized test files
-**/src/test/java/**/RobotParameterizedTest.java
-TEST_SUMMARY.md
-SETUP_INSTRUCTIONS.md
+
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

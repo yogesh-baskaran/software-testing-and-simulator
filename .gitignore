@@ -1,0 +1,86 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+.kotlin
+
+### Maven ###
+# Test Results and Reports
+target/surefire-reports/
+target/failsafe-reports/
+target/*.jar
+target/*.war
+target/classes/
+target/test-classes/
+
+# Maven Build
+*.log
+dependency-reduced-pom.xml
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+releases/
+
+### Test Files ###
+# Exclude parameterized test files
+**/src/test/java/**/RobotParameterizedTest.java
+TEST_SUMMARY.md
+SETUP_INSTRUCTIONS.md
+
+### IntelliJ IDEA ###
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+*.iws
+*.iml
+*.ipr
+.idea/
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
+
+### Test Output and Reports ###
+# JUnit test reports
+surefire-reports/
+failsafe-reports/
+*.xml.report
+test-results/
+TEST-*.xml
+*.testlog
+
+# Code coverage reports
+coverage/
+jacoco/
+*.exec
+.coverage
+htmlcov/
+
+# Test output
+*.out
+out/
+

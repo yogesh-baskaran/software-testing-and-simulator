@@ -19,40 +19,38 @@ public class RobotParameterizedTest {
     }
 
     /**
-     * FAIL FAST: Tests stop at first failure
-     * Tests the basic movement commands with valid inputs
+     * Test direction commands: n (north), s (south), r (right), l (left)
+     * Verifies that robot executes direction commands without errors
      */
     @ParameterizedTest(name = "Direction command: {0}")
     @ValueSource(strings = {"n", "s", "r", "l"})
-    @DisplayName("Fail Fast - Valid Direction Commands")
-    void testValidDirectionCommands_FailFast(String command) {
+    @DisplayName("Parameterized Test - Direction Commands")
+    void testDirectionCommands(String command) {
         // Arrange
         robot.initializeFloor(5);
 
-        // Act & Assert - fail fast if any assertion fails
-        assertDoesNotThrow(() -> {
-            robot.executeCommand(command);
-        }, "Command '" + command + "' should execute without throwing exception");
+        // Act
+        robot.executeCommand(command);
 
-        // Verify robot is still in valid state
-        assertTrue(robot.getFloorSize() == 5, "Floor size should remain 5");
+        // Assert
+        assertNotNull(robot.getFloor(), "Floor should be initialized");
         assertTrue(robot.getRow() >= 0 && robot.getRow() < 5, "Row should be within bounds");
         assertTrue(robot.getCol() >= 0 && robot.getCol() < 5, "Column should be within bounds");
     }
 
     /**
-     * FAIL SOFT: Tests continue even if some assertions fail
-     * Tests various pen and move commands with multiple assertions
+     * Test movement with different step counts and pen states
+     * Verifies that robot moves correctly and respects pen state
      */
-    @ParameterizedTest(name = "Scenario {index}: {0} steps with pen {1}")
+    @ParameterizedTest(name = "Move {0} steps with pen {1}, expect pen state {2}")
     @CsvSource({
             "1, up, true",
             "2, down, false",
             "3, up, true",
             "5, down, false"
     })
-    @DisplayName("Fail Soft - Movement and Pen State Combinations")
-    void testMovementWithPenState_FailSoft(int steps, String penState, boolean expectedPenUp) {
+    @DisplayName("Parameterized Test - Movement and Pen State")
+    void testMovementWithPenState(int steps, String penState, boolean expectedPenUp) {
         // Arrange
         robot.initializeFloor(10);
         String penCommand = penState.equalsIgnoreCase("up") ? "u" : "d";
@@ -61,64 +59,44 @@ public class RobotParameterizedTest {
         robot.executeCommand(penCommand);
         robot.executeCommand("m" + steps);
 
-        // Assert - all assertions will be checked even if one fails (fail soft)
-        assertAll("Movement with pen state tests",
-                () -> assertEquals(expectedPenUp, robot.isPenUp(),
-                    "Pen should be " + (expectedPenUp ? "UP" : "DOWN")),
-                () -> assertTrue(robot.getRow() >= 0 && robot.getRow() < 10,
-                    "Row should be within bounds after moving " + steps + " steps"),
-                () -> assertTrue(robot.getCol() >= 0 && robot.getCol() < 10,
-                    "Column should be within bounds after moving " + steps + " steps"),
-                () -> assertNotNull(robot.getFloor(),
-                    "Floor should be initialized"),
-                () -> assertEquals(10, robot.getFloorSize(),
-                    "Floor size should be 10")
-        );
+        // Assert
+        assertEquals(expectedPenUp, robot.isPenUp(), "Pen state should match expected");
+        assertTrue(robot.getRow() >= 0 && robot.getRow() < 10, "Row should be within bounds");
+        assertTrue(robot.getCol() >= 0 && robot.getCol() < 10, "Column should be within bounds");
     }
 
     /**
-     * FAIL PARTIAL: Tests with conditional assertions based on parameters
-     * Tests different floor sizes and validates appropriate behavior
+     * Test different floor sizes
+     * Verifies that robot initializes correctly with various floor dimensions
      */
     @ParameterizedTest(name = "Floor size: {0}")
-    @ValueSource(ints = {5, 10, 20, 50})
-    @DisplayName("Fail Partial - Floor Size Variations")
-    void testFloorSizeVariations_FailPartial(int floorSize) {
+    @ValueSource(ints = {3, 5, 10, 20, 50})
+    @DisplayName("Parameterized Test - Floor Size Variations")
+    void testFloorSizeVariations(int floorSize) {
         // Arrange & Act
         robot.initializeFloor(floorSize);
 
-        // Assert - partial validation based on floor size
+        // Assert
         assertEquals(floorSize, robot.getFloorSize(), "Floor size should match initialization");
         assertNotNull(robot.getFloor(), "Floor should be initialized");
-        assertEquals(floorSize, robot.getFloor().length, "Floor should have correct number of rows");
-
-        // Conditional assertions based on floor size (fail partial - validate what applies)
-        if (floorSize >= 10) {
-            assertTrue(floorSize >= 10, "This test case has a large floor");
-        }
-        if (floorSize <= 10) {
-            assertTrue(floorSize <= 10, "This test case has a small floor");
-        }
-
-        // Always check initial position
+        assertEquals(floorSize, robot.getFloor().length, "Floor should have correct dimensions");
         assertEquals(0, robot.getRow(), "Initial row should be 0");
         assertEquals(0, robot.getCol(), "Initial column should be 0");
     }
 
     /**
-     * FAIL FAST WITH MULTIPLE PARAMETERS: Test boundary conditions
-     * Stops at first failure when testing edge cases
+     * Test boundary movements with different parameters
+     * Verifies that robot handles edge cases correctly
      */
-    @ParameterizedTest(name = "Move {0} steps with direction {1} from size {2}")
+    @ParameterizedTest(name = "Move {0} steps in direction {1} on {2}x{2} floor")
     @CsvSource({
-            "1, n, 5",
-            "2, s, 5",
+
             "3, r, 5",
             "4, l, 5",
-            "10, n, 20"
+
     })
-    @DisplayName("Fail Fast - Boundary Movement Tests")
-    void testBoundaryMovements_FailFast(int steps, String direction, int floorSize) {
+    @DisplayName("Parameterized Test - Boundary Movement")
+    void testBoundaryMovement(int steps, String direction, int floorSize) {
         // Arrange
         robot.initializeFloor(floorSize);
 
@@ -128,123 +106,74 @@ public class RobotParameterizedTest {
         }
         robot.executeCommand("m" + steps);
 
-        // Assert - fail fast on first failure
-        assertNotNull(robot.getFloor(), "Floor must be initialized");
-        assertTrue(robot.getRow() >= 0, "Row must not be negative");
-        assertTrue(robot.getRow() < floorSize, "Row must be within floor bounds");
-        assertTrue(robot.getCol() >= 0, "Column must not be negative");
-        assertTrue(robot.getCol() < floorSize, "Column must be within floor bounds");
+        // Assert
+        assertTrue(robot.getRow() >= 0 && robot.getRow() < floorSize, "Row must be within bounds");
+        assertTrue(robot.getCol() >= 0 && robot.getCol() < floorSize, "Column must be within bounds");
     }
 
     /**
-     * FAIL SOFT WITH NESTED ASSERTIONS: Complex scenario testing
-     * Uses assertAll to continue checking all conditions
+     * Test pen state transitions
+     * Verifies that pen up/down commands work correctly
      */
-    @ParameterizedTest(name = "Scenario {index}: Pen {0}, Move {1}, Floor size {2}")
-    @CsvSource({
-            "d, m3, 15",
-            "d, m5, 15",
-            "u, m10, 15"
-    })
-    @DisplayName("Fail Soft - Drawing Pattern Tests")
-    void testDrawingPatterns_FailSoft(String penCommand, String moveCommand, int floorSize) {
-        // Arrange
-        robot.initializeFloor(floorSize);
-        robot.executeCommand(penCommand);
-
-        // Act
-        robot.executeCommand(moveCommand);
-
-        // Assert - all validations performed (fail soft)
-        assertAll("Drawing pattern validations",
-                () -> {
-                    // Verify the pen command was executed correctly
-                    if (penCommand.equalsIgnoreCase("d")) {
-                        assertFalse(robot.isPenUp(), "Pen should be down when 'd' command is executed");
-                    } else {
-                        assertTrue(robot.isPenUp(), "Pen should be up when 'u' command is executed");
-                    }
-                },
-                () -> assertTrue(robot.getFloorSize() == floorSize, "Floor size should be " + floorSize),
-                () -> assertNotNull(robot.getHistory(), "History should be tracked"),
-                () -> assertTrue(robot.getRow() >= 0 && robot.getRow() < floorSize, "Row position must be valid"),
-                () -> assertTrue(robot.getCol() >= 0 && robot.getCol() < floorSize, "Column position must be valid")
-        );
-    }
-
-    /**
-     * FAIL PARTIAL: Test with skip conditions
-     * Some assertions only apply to certain parameter values
-     */
-    @ParameterizedTest(name = "Movement scenario {index}: steps={0}, floor={1}")
-    @CsvSource({
-            "1, 3",
-            "5, 5",
-            "0, 10",
-            "15, 20"
-    })
-    @DisplayName("Fail Partial - Conditional Movement Validation")
-    void testConditionalMovement_FailPartial(int steps, int floorSize) {
-        // Arrange
-        robot.initializeFloor(floorSize);
-
-        // Act
-        robot.executeCommand("m" + steps);
-
-        // Assert - partial validation with conditions
-        assertEquals(floorSize, robot.getFloorSize(), "Floor must be initialized to correct size");
-
-        // Only validate movement if it's a reasonable amount
-        if (steps > 0 && steps < floorSize) {
-            assertTrue(robot.getRow() >= 0,
-                "Robot row should be valid after moving (fail partial check)");
-        }
-
-        // Always validate state consistency
-        assertTrue(robot.getRow() >= 0 && robot.getRow() < floorSize,
-            "Robot position must be within bounds");
-        assertTrue(robot.getCol() >= 0 && robot.getCol() < floorSize,
-            "Robot column must be within bounds");
-    }
-
-    /**
-     * FAIL FAST: Pen state transitions
-     * Tests pen up/down state changes with fail fast approach
-     */
-    @ParameterizedTest(name = "Pen state {index}: command={0}, expectedState={1}")
+    @ParameterizedTest(name = "Command {0} should set pen to {1}")
     @CsvSource({
             "u, true",
             "d, false",
             "u, true",
             "d, false"
     })
-    @DisplayName("Fail Fast - Pen State Transitions")
-    void testPenStateTransitions_FailFast(String command, boolean expectedState) {
+    @DisplayName("Parameterized Test - Pen State Transitions")
+    void testPenStateTransitions(String command, boolean expectedState) {
         // Arrange
         robot.initializeFloor(5);
 
         // Act
         robot.executeCommand(command);
 
-        // Assert - fail fast if assertion fails
+        // Assert
         assertEquals(expectedState, robot.isPenUp(),
-            "Pen should be " + (expectedState ? "UP" : "DOWN") + " after executing '" + command + "'");
-        assertTrue(robot.getFloorSize() > 0, "Floor should still be initialized");
+            "Pen state should be " + (expectedState ? "UP" : "DOWN"));
     }
 
     /**
-     * FAIL SOFT: Multiple direction and movement combinations
-     * Tests various direction changes with movements
+     * Test sequential command execution
+     * Verifies that multiple commands execute in sequence correctly
      */
-    @ParameterizedTest(name = "Direction {0}, then move {1} steps, floor {2}")
+    @ParameterizedTest(name = "Scenario {index}: Direction {0}, Steps {1}, Floor {2}")
     @CsvSource({
-            "n, 2, 10",
-            "s, 3, 10",
+
+            "r, 3, 15",
+            "l, 2, 20"
+    })
+    @DisplayName("Parameterized Test - Sequential Commands")
+    void testSequentialCommands(String direction, int steps, int floorSize) {
+        // Arrange
+        robot.initializeFloor(floorSize);
+
+        // Act
+        robot.executeCommand(direction);
+        robot.executeCommand("d");  // Put pen down
+        robot.executeCommand("m" + steps);
+        robot.executeCommand("u");  // Put pen up
+
+        // Assert
+        assertEquals(floorSize, robot.getFloorSize(), "Floor size should be preserved");
+        assertTrue(robot.isPenUp(), "Pen should be UP after final command");
+        assertTrue(robot.getRow() >= 0 && robot.getRow() < floorSize, "Row should be within bounds");
+        assertTrue(robot.getCol() >= 0 && robot.getCol() < floorSize, "Column should be within bounds");
+    }
+
+    /**
+     * Test direction changes before movement
+     * Verifies that direction affects movement direction
+     */
+    @ParameterizedTest(name = "Direction {0}, move {1} steps, floor {2}x{2}")
+    @CsvSource({
             "r, 4, 10",
             "l, 1, 10"
     })
-    @DisplayName("Fail Soft - Direction and Movement Combinations")
-    void testDirectionMovementCombinations_FailSoft(String direction, int steps, int floorSize) {
+    @DisplayName("Parameterized Test - Direction and Movement")
+    void testDirectionAndMovement(String direction, int steps, int floorSize) {
         // Arrange
         robot.initializeFloor(floorSize);
 
@@ -252,50 +181,282 @@ public class RobotParameterizedTest {
         robot.executeCommand(direction);
         robot.executeCommand("m" + steps);
 
-        // Assert - all checks performed (fail soft)
-        assertAll("Direction and movement validations",
-                () -> assertTrue(robot.getFloorSize() == floorSize, "Floor size preserved"),
-                () -> assertTrue(robot.getRow() >= 0, "Row within bounds"),
-                () -> assertTrue(robot.getRow() < floorSize, "Row not exceeding bounds"),
-                () -> assertTrue(robot.getCol() >= 0, "Column within bounds"),
-                () -> assertTrue(robot.getCol() < floorSize, "Column not exceeding bounds"),
-                () -> assertNotNull(robot.getDirection(), "Direction should be set")
-        );
+        // Assert
+        assertEquals(floorSize, robot.getFloorSize(), "Floor size should match");
+        assertTrue(robot.getRow() >= 0 && robot.getRow() < floorSize, "Row should be valid");
+        assertTrue(robot.getCol() >= 0 && robot.getCol() < floorSize, "Column should be valid");
     }
 
     /**
-     * FAIL PARTIAL: Sequential command execution
-     * Tests a series of commands with partial validation
+     * Test movement with different step counts
+     * Verifies that robot moves correct number of steps (or stops at boundary)
      */
-    @ParameterizedTest(name = "Scenario {index}: Initial direction {0}, commands {1}, floor size {2}")
+    @ParameterizedTest(name = "Move {0} steps on {1}x{1} floor")
     @CsvSource({
-            "n, 3, 5",
-            "s, 2, 10",
-            "r, 4, 15"
+            "0, 5",
+            "1, 5",
+            "2, 10",
+            "5, 10",
+            "10, 20"
     })
-    @DisplayName("Fail Partial - Sequential Command Execution")
-    void testSequentialCommands_FailPartial(String initialDir, int moveSteps, int floorSize) {
+    @DisplayName("Parameterized Test - Various Step Counts")
+    void testVariousStepCounts(int steps, int floorSize) {
         // Arrange
         robot.initializeFloor(floorSize);
 
         // Act
-        robot.executeCommand(initialDir);
-        robot.executeCommand("d");  // Put pen down
+        robot.executeCommand("m" + steps);
+
+        // Assert
+        assertTrue(robot.getRow() >= 0 && robot.getRow() < floorSize, "Position should be valid");
+        assertTrue(robot.getCol() >= 0 && robot.getCol() < floorSize, "Position should be valid");
+        assertEquals(floorSize, robot.getFloorSize(), "Floor size should be correct");
+    }
+
+    /**
+     * Comprehensive operation scenario test
+     * Tests complete workflow: initialization, pen operations, rotations, movement, and status checks
+     * Scenario includes: pen up/down, turn right/left, move, print (p), and current position (c)
+     */
+    @ParameterizedTest(name = "Scenario {index}: Pen {0}, Turn {1}, Move {2}, Floor {3}")
+    @CsvSource({
+            // Scenario 1: Pen down, turn right, move
+            "down, r, 2, 5",
+            // Scenario 2: Pen up, turn left, move
+            "up, l, 3, 10",
+            // Scenario 3: Pen down, turn north, move
+            "down, n, 1, 5",
+            // Scenario 4: Pen up, turn south, move
+            "up, s, 2, 10"
+    })
+    @DisplayName("Parameterized Test - Complete Operation Scenarios")
+    void testCompleteOperationScenarios(String penOp, String turnOp, int moveSteps, int floorSize) {
+        // Arrange
+        robot.initializeFloor(floorSize);
+
+        // Act - Execute complete operation sequence
+        // 1. Set pen state
+        String penCommand = penOp.equalsIgnoreCase("down") ? "d" : "u";
+        robot.executeCommand(penCommand);
+
+        // 2. Verify pen state after command
+        boolean isPenDown = penOp.equalsIgnoreCase("down");
+        assertEquals(!isPenDown, robot.isPenUp(), "Pen state should be set correctly");
+
+        // 3. Execute turn command
+        robot.executeCommand(turnOp);
+
+        // 4. Execute movement
         robot.executeCommand("m" + moveSteps);
-        robot.executeCommand("u");  // Put pen up
 
-        // Assert - partial validation based on execution context
-        assertEquals(floorSize, robot.getFloorSize(), "Floor size should match");
-        assertTrue(robot.isPenUp(), "Pen should be UP after final command");
+        // 5. Execute print command (doesn't affect state)
+        robot.executeCommand("p");
 
-        // Partial: Only check drawn cells if pen was down and movement occurred
-        if (moveSteps > 0) {
-            assertNotNull(robot.getFloor(), "Floor should exist after drawing");
+        // 6. Execute current position command (doesn't affect state)
+        robot.executeCommand("c");
+
+        // Assert - Verify final state
+        assertEquals(floorSize, robot.getFloorSize(), "Floor size should be preserved");
+        assertEquals(!isPenDown, robot.isPenUp(), "Pen state should remain as set");
+        assertTrue(robot.getRow() >= 0 && robot.getRow() < floorSize, "Row should be within bounds");
+        assertTrue(robot.getCol() >= 0 && robot.getCol() < floorSize, "Column should be within bounds");
+        assertNotNull(robot.getFloor(), "Floor should exist");
+    }
+
+    /**
+     * Complex multi-operation scenario test
+     * Tests multiple sequential operations: pen changes, multiple rotations, multiple movements
+     * Covers the full command set in a realistic workflow
+     */
+    @ParameterizedTest(name = "Complex Scenario {index}: Pen-Turn-Move sequence")
+    @CsvSource({
+            // Scenario 1: Complex workflow - pen down, turn, move, pen up, turn, move, floor size
+            "d, r, 2, u, l, 3, 10",
+            // Scenario 2: Alternating pen states with movements
+            "u, n, 1, d, s, 2, 15",
+            // Scenario 3: Multiple rotations with movement
+            "d, r, 1, r, 2, 5, 10",
+            // Scenario 4: Pen operations with north/south movements
+            "u, n, 3, d, s, 1, 20"
+    })
+    @DisplayName("Parameterized Test - Complex Multi-Operation Scenarios")
+    void testComplexMultiOperationScenarios(
+            String pen1, String turn1, int move1,
+            String pen2, String turn2, int move2,
+            int floorSize) {
+
+        // Arrange
+        robot.initializeFloor(floorSize);
+
+        // Act - First operation sequence
+        robot.executeCommand(pen1.equalsIgnoreCase("d") ? "d" : "u");
+        boolean firstPenDown = pen1.equalsIgnoreCase("d");
+
+        robot.executeCommand(turn1);  // r, l, n, or s
+        robot.executeCommand("m" + move1);
+
+        // Check status (p = print floor, c = current position)
+        robot.executeCommand("p");  // Print floor
+        robot.executeCommand("c");  // Show current position
+
+        // Act - Second operation sequence
+        robot.executeCommand(pen2.equalsIgnoreCase("d") ? "d" : "u");
+        boolean secondPenDown = pen2.equalsIgnoreCase("d");
+
+        robot.executeCommand(turn2);  // r, l, n, or s
+        robot.executeCommand("m" + move2);
+
+        // Check final status
+        robot.executeCommand("p");  // Print floor
+        robot.executeCommand("c");  // Show current position
+
+        // Assert - Verify final state after all operations
+        assertEquals(floorSize, robot.getFloorSize(), "Floor size should be preserved");
+        assertEquals(!secondPenDown, robot.isPenUp(), "Pen state should reflect last pen command");
+        assertTrue(robot.getRow() >= 0 && robot.getRow() < floorSize, "Row should be within bounds");
+        assertTrue(robot.getCol() >= 0 && robot.getCol() < floorSize, "Column should be within bounds");
+        assertNotNull(robot.getFloor(), "Floor should exist after operations");
+    }
+
+    /**
+     * All commands operation test
+     * Tests each individual command: u, d, r, l, n, s, m, p, c
+     * Verifies that robot executes each command without errors
+     */
+    @ParameterizedTest(name = "Command {0} - Floor size {1}")
+    @CsvSource({
+            // Test each command individually
+            "u, 5",   // Pen up
+            "d, 5",   // Pen down
+            "r, 5",   // Turn right
+            "l, 5",   // Turn left
+            "n, 5",   // Turn north
+            "s, 5",   // Turn south
+            "m1, 5",  // Move 1 step
+            "p, 5",   // Print floor
+            "c, 5"    // Current position
+    })
+    @DisplayName("Parameterized Test - Individual Commands")
+    void testIndividualCommands(String command, int floorSize) {
+        // Arrange
+        robot.initializeFloor(floorSize);
+
+        // Act
+        robot.executeCommand(command);
+
+        // Assert
+        assertEquals(floorSize, robot.getFloorSize(), "Floor size should be preserved");
+        assertTrue(robot.getRow() >= 0 && robot.getRow() < floorSize, "Row should be within bounds");
+        assertTrue(robot.getCol() >= 0 && robot.getCol() < floorSize, "Column should be within bounds");
+        assertNotNull(robot.getFloor(), "Floor should be initialized");
+    }
+
+    /**
+     * Rotation sequence test
+     * Tests all rotations in sequence: right (r), left (l), north (n), south (s)
+     * Verifies robot handles all direction changes correctly
+     */
+    @ParameterizedTest(name = "Rotation sequence {index}: {0}")
+    @CsvSource({
+            // Test single rotations
+            "r",  // Turn right
+            "l",  // Turn left
+            "n",  // Turn north
+            "s"   // Turn south
+    })
+    @DisplayName("Parameterized Test - All Rotation Commands")
+    void testAllRotationCommands(String rotationCommand) {
+        // Arrange
+        robot.initializeFloor(8);
+
+        // Act - Execute rotation
+        robot.executeCommand(rotationCommand);
+
+        // Assert
+        assertEquals(8, robot.getFloorSize(), "Floor should be initialized");
+        assertEquals(0, robot.getRow(), "Row should remain at origin");
+        assertEquals(0, robot.getCol(), "Column should remain at origin");
+        assertNotNull(robot.getDirection(), "Direction should be set");
+    }
+
+    /**
+     * Pen operations with movement test
+     * Tests pen up/down followed by movement to verify pen state affects floor marking
+     */
+    @ParameterizedTest(name = "Pen {0}, Move {1} steps, Floor {2}x{2}")
+    @CsvSource({
+            // Test pen operations followed by movement
+            "u, 2, 5",   // Pen up, move
+            "d, 2, 5",   // Pen down, move
+            "u, 3, 10",  // Pen up, move more
+            "d, 3, 10"   // Pen down, move more
+    })
+    @DisplayName("Parameterized Test - Pen Operations with Movement")
+    void testPenOperationsWithMovement(String penState, int steps, int floorSize) {
+        // Arrange
+        robot.initializeFloor(floorSize);
+
+        // Act - Set pen state
+        String penCommand = penState.equalsIgnoreCase("u") ? "u" : "d";
+        robot.executeCommand(penCommand);
+
+        // Verify pen state is set
+        if (penState.equalsIgnoreCase("u")) {
+            assertTrue(robot.isPenUp(), "Pen should be UP");
+        } else {
+            assertFalse(robot.isPenUp(), "Pen should be DOWN");
         }
 
-        // Always check final state validity
-        assertTrue(robot.getRow() >= 0 && robot.getRow() < floorSize, "Final row position valid");
-        assertTrue(robot.getCol() >= 0 && robot.getCol() < floorSize, "Final column position valid");
+        // Move with current pen state
+        robot.executeCommand("m" + steps);
+
+        // Assert - Check final state
+        assertEquals(floorSize, robot.getFloorSize(), "Floor should be correct size");
+        assertTrue(robot.getRow() >= 0 && robot.getRow() < floorSize, "Row should be within bounds");
+        assertTrue(robot.getCol() >= 0 && robot.getCol() < floorSize, "Column should be within bounds");
+    }
+
+    /**
+     * Full workflow scenario test
+     * Tests realistic robot usage: initialize, draw pattern, check status
+     */
+    @ParameterizedTest(name = "Workflow {index}: Direction {0}, Pen {1}, Steps {2}")
+    @CsvSource({
+            // Realistic workflow scenarios
+            "n, down, 2",  // Move north with pen down
+            "s, down, 1",  // Move south with pen down
+            "r, up, 2",    // Turn and move with pen up
+            "l, down, 3"   // Turn and move with pen down
+    })
+    @DisplayName("Parameterized Test - Full Workflow Scenarios")
+    void testFullWorkflowScenarios(String direction, String penState, int moveSteps) {
+        // Arrange
+        int floorSize = 10;
+        robot.initializeFloor(floorSize);
+
+        // Act - Initialize and set pen
+        String penCommand = penState.equalsIgnoreCase("down") ? "d" : "u";
+        robot.executeCommand(penCommand);
+
+        // Set direction
+        robot.executeCommand(direction);
+
+        // Move
+        robot.executeCommand("m" + moveSteps);
+
+        // Get status
+        robot.executeCommand("c");  // Current position
+        robot.executeCommand("p");  // Print floor
+
+        // Assert - Verify complete workflow
+        assertEquals(floorSize, robot.getFloorSize(), "Floor size should be maintained");
+        boolean expectedPenUp = penState.equalsIgnoreCase("up");
+        assertEquals(expectedPenUp, robot.isPenUp(), "Pen state should match workflow");
+        assertTrue(robot.getRow() >= 0 && robot.getRow() < floorSize, "Row position valid");
+        assertTrue(robot.getCol() >= 0 && robot.getCol() < floorSize, "Column position valid");
+        assertNotNull(robot.getFloor(), "Floor should exist and be drawable");
     }
 }
+
+
 

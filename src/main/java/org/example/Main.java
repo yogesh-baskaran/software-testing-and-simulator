@@ -80,15 +80,15 @@ public class Main {
             System.out.println("turned left");
         }
         //move up
-        else if (cmd.equalsIgnoreCase("n")){
-            direction = (direction +0) %4;
-            System.out.println("turned north");
-        }
+//        else if (cmd.equalsIgnoreCase("n")){
+//            direction = (direction +0) %4;
+//            System.out.println("turned north");
+//        }
         //move down
-        else if (cmd.equalsIgnoreCase("s")){
-            direction = (direction +2) %4;
-            System.out.println("turned south");
-        }
+//        else if (cmd.equalsIgnoreCase("s")){
+//            direction = (direction +2) %4;
+//            System.out.println("turned south");
+//        }
         //move forward
         else if (cmd.startsWith("m") || cmd.startsWith("M")){
             int steps = Integer.parseInt(cmd.substring(1));
@@ -200,10 +200,8 @@ public class Main {
                 commands:
                 u - pen up
                 d - pen down
-                r - turn right  
-                l - turn left
-                n - turn north
-                s - turn south
+                r - turn right
+                l - turn left                
                 ms - move s steps (example: m5)
                 p - print floor
                 c - current position

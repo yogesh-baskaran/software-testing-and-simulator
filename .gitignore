@@ -24,7 +24,6 @@ release.properties
 releases/
 
 
-
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml

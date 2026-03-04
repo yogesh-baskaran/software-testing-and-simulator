@@ -6,6 +6,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Robot Parameterized Tests")
@@ -456,7 +460,158 @@ public class RobotParameterizedTest {
         assertTrue(robot.getCol() >= 0 && robot.getCol() < floorSize, "Column position valid");
         assertNotNull(robot.getFloor(), "Floor should exist and be drawable");
     }
+
+    @ParameterizedTest(name = "Initialize format ''{0}'' on size {1}")
+    @CsvSource({
+            "i5,5",
+            "i 7,7"
+    })
+    @DisplayName("Parameterized Test - Initialize command formats")
+    void testInitializeCommandFormats(String cmd, int expectedSize) {
+        robot.initializeFloor(3);
+        robot.executeCommand("d");
+        robot.executeCommand("m1");
+
+        robot.executeCommand(cmd);
+
+        assertEquals(expectedSize, robot.getFloorSize(), "Initialize command should set floor size");
+        assertEquals(0, robot.getRow(), "Row should reset after initialize");
+        assertEquals(0, robot.getCol(), "Column should reset after initialize");
+        assertTrue(robot.isPenUp(), "Pen should reset to UP after initialize");
+    }
+
+    @ParameterizedTest(name = "Invalid init command ''{0}'' keeps floor size {1}")
+    @CsvSource({
+            "i,5",
+            "ix,5",
+            "i-1,5",
+            "i0,5"
+    })
+    @DisplayName("Parameterized Test - Invalid initialize commands")
+    void testInvalidInitializeCommandsDoNotReset(String cmd, int initialSize) {
+        robot.initializeFloor(initialSize);
+        robot.executeCommand("d");
+        robot.executeCommand("m1");
+        int rowBefore = robot.getRow();
+        int colBefore = robot.getCol();
+        boolean penBefore = robot.isPenUp();
+
+        robot.executeCommand(cmd);
+
+        assertEquals(initialSize, robot.getFloorSize(), "Invalid initialize command should not change floor size");
+        assertEquals(rowBefore, robot.getRow(), "Invalid initialize should not reset row");
+        assertEquals(colBefore, robot.getCol(), "Invalid initialize should not reset col");
+        assertEquals(penBefore, robot.isPenUp(), "Invalid initialize should not reset pen");
+    }
+
+    @ParameterizedTest(name = "Move {0} on {1}x{1} stays in bounds and stops at edge")
+    @CsvSource({
+            "10,5",
+            "999,5",
+            "50,1"
+    })
+    @DisplayName("Parameterized Test - Boundary stop behavior")
+    void testMoveStopsAtBoundary(int steps, int floorSize) {
+        robot.initializeFloor(floorSize);
+
+        robot.executeCommand("m" + steps);
+
+        assertTrue(robot.getRow() >= 0 && robot.getRow() < floorSize, "Row must remain in bounds");
+        assertTrue(robot.getCol() >= 0 && robot.getCol() < floorSize, "Col must remain in bounds");
+        if (floorSize > 0) {
+            assertEquals(Math.max(0, floorSize - 1), robot.getRow(), "North movement should stop at top edge");
+            assertEquals(0, robot.getCol(), "Column should stay unchanged when moving NORTH");
+        }
+    }
+
+    @ParameterizedTest(name = "Pen command {0} move {1} marks floor? {2}")
+    @CsvSource({
+            "u,2,false",
+            "d,2,true"
+    })
+    @DisplayName("Parameterized Test - Pen effect on floor marking")
+    void testPenAffectsMarking(String penCommand, int steps, boolean expectMark) {
+        robot.initializeFloor(6);
+
+        robot.executeCommand(penCommand);
+        robot.executeCommand("m" + steps);
+
+        int[][] floor = robot.getFloor();
+        boolean anyMark = false;
+        for (int r = 0; r < floor.length; r++) {
+            for (int c = 0; c < floor.length; c++) {
+                if (floor[r][c] == 1) {
+                    anyMark = true;
+                }
+            }
+        }
+        assertEquals(expectMark, anyMark, "Floor marking should match pen state");
+    }
+
+    @ParameterizedTest(name = "Invalid command ''{0}'' keeps state stable")
+    @ValueSource(strings = {"x", "n", "s"})
+    @DisplayName("Parameterized Test - Invalid commands")
+    void testInvalidCommandsKeepState(String cmd) {
+        robot.initializeFloor(5);
+        int rowBefore = robot.getRow();
+        int colBefore = robot.getCol();
+        int dirBefore = robot.getDirection();
+        boolean penBefore = robot.isPenUp();
+
+        robot.executeCommand(cmd);
+
+        assertEquals(rowBefore, robot.getRow(), "Invalid command should not change row");
+        assertEquals(colBefore, robot.getCol(), "Invalid command should not change col");
+        assertEquals(dirBefore, robot.getDirection(), "Invalid command should not change direction");
+        assertEquals(penBefore, robot.isPenUp(), "Invalid command should not change pen");
+    }
+
+    @ParameterizedTest(name = "Move parse error command ''{0}'' throws")
+    @ValueSource(strings = {"m", "mabc", "M-1"})
+    @DisplayName("Parameterized Test - Move parse errors")
+    void testMoveParseErrors(String cmd) {
+        robot.initializeFloor(5);
+        assertThrows(NumberFormatException.class, () -> robot.executeCommand(cmd),
+                "Invalid move command should throw NumberFormatException with current parser");
+    }
+
+    @ParameterizedTest(name = "Command {0} should produce output")
+    @ValueSource(strings = {"P", "c"})
+    @DisplayName("Parameterized Test - Output commands")
+    void testOutputCommandsProduceText(String cmd) throws Exception {
+        robot.initializeFloor(3);
+        PrintStream originalOut = System.out;
+        ByteArrayOutputStream capture = new ByteArrayOutputStream();
+        try {
+            System.setOut(new PrintStream(capture, true, StandardCharsets.UTF_8.name()));
+            robot.executeCommand(cmd);
+        } finally {
+            System.setOut(originalOut);
+        }
+
+        String text = capture.toString(StandardCharsets.UTF_8.name());
+        assertFalse(text.trim().isEmpty(), "Output command should print text");
+    }
+
+    @ParameterizedTest(name = "Replay after path ''{0}'' on floor {1}")
+    @CsvSource({
+            "d;m2;r;m2,6",
+            "d;m1;r;m1;l;m1,8"
+    })
+    @DisplayName("Parameterized Test - Replay reproduces end state")
+    void testReplayHistoryReproducesState(String script, int floorSize) {
+        robot.initializeFloor(floorSize);
+
+        for (String cmd : script.split(";")) {
+            robot.executeCommand(cmd);
+        }
+        int rowBeforeReplay = robot.getRow();
+        int colBeforeReplay = robot.getCol();
+
+        robot.executeCommand("h");
+
+        assertEquals(rowBeforeReplay, robot.getRow(), "Replay should reproduce row");
+        assertEquals(colBeforeReplay, robot.getCol(), "Replay should reproduce col");
+        assertEquals(floorSize, robot.getFloorSize(), "Replay should preserve floor size");
+    }
 }
-
-
-

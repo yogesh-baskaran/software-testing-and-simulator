@@ -79,3 +79,20 @@ htmlcov/
 *.out
 out/
 
+# Maven build output
+/target/
+
+# Surefire/Failsafe test reports
+**/surefire-reports/
+**/failsafe-reports/
+
+# JaCoCo coverage outputs
+**/jacoco.exec
+**/jacoco/
+**/site/jacoco/
+
+# IDE/system noise (optional but recommended)
+.idea/
+*.iml
+.DS_Store
+Thumbs.db

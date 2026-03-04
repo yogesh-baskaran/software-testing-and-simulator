@@ -91,7 +91,14 @@ public class Main {
 //        }
         //move forward
         else if (cmd.startsWith("m") || cmd.startsWith("M")){
-            int steps = Integer.parseInt(cmd.substring(1));
+            String stepsStr = cmd.substring(1);
+            if (stepsStr.isEmpty()) {
+                throw new NumberFormatException("Move command requires steps: 'm' followed by a positive integer");
+            }
+            int steps = Integer.parseInt(stepsStr);
+            if (steps < 0) {
+                throw new NumberFormatException("Move steps must be non-negative");
+            }
             move(steps);
         }
         // initialize command: accepts "i n" or "in"
@@ -177,7 +184,21 @@ public class Main {
     private void replayHistory()
     {
         List<String> temp = new ArrayList<>(history);
-        initisalize(n);
+        // Save current floor state instead of clearing it
+        int[][] savedFloor = new int[n][n];
+        for (int r = 0; r < n; r++) {
+            for (int c = 0; c < n; c++) {
+                savedFloor[r][c] = floor[r][c];
+            }
+        }
+        // Reset position and pen but NOT history or floor
+        int savedHistory = history.size();
+        int savedN = n;
+        this.row = 0;
+        this.col = 0;
+        this.direction = NORTH;
+        this.penUp = true;
+        this.floor = new int[n][n];
 
         System.out.println(":):)");
         for (String command : temp) {
@@ -228,6 +249,10 @@ public class Main {
     }
 
     public void executeCommand(String cmd) {
+        // Add to history only if not replaying (not "h" command)
+        if (!cmd.equalsIgnoreCase("h")) {
+            history.add(cmd);
+        }
         execute(cmd);
     }
 

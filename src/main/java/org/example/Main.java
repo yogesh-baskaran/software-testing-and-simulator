@@ -67,6 +67,8 @@ public class Main {
         }
         else if (cmd.equalsIgnoreCase("d")){
             penUp = false;
+            // Start drawing from current position as soon as pen is down.
+            floor[row][col] = 1;
             System.out.println("pen down");
         }
         //move right
@@ -153,30 +155,28 @@ public class Main {
         }
     }
     private void printfloor(){
-        //print floor
-        for(int r = n -1; r>= 0; r--){
-            System.out.printf("%2d|", r);
-            for (int c =0; c < n; c++){
-                if (floor[r][c] == 1){
-                    System.out.print("* ");
-                }
-                else {
-                    System.out.print(".  ");
-                }
+        int indexWidth = String.valueOf(Math.max(0, n - 1)).length();
+        int cellWidth = 3;
+
+        // Print floor with fixed-width cells so '.' and '*' align consistently.
+        for (int r = n - 1; r >= 0; r--) {
+            System.out.printf("%" + indexWidth + "d|", r);
+            for (int c = 0; c < n; c++) {
+                String symbol = floor[r][c] == 1 ? "*" : ".";
+                System.out.printf("%" + cellWidth + "s", symbol);
             }
             System.out.println();
         }
-        //print column indices
-        System.out.print("  ");
-        for (int i =0; i < n*2; i++){
+
+        System.out.print(" ".repeat(indexWidth) + "-");
+        for (int i = 0; i < n * cellWidth; i++) {
             System.out.print("-");
         }
         System.out.println();
 
-        System.out.print(" ");
-        for (int c =0; c < n; c++){
-            System.out.printf("%2d", c);
-            //{System.out.print(c + " ");}
+        System.out.print(" ".repeat(indexWidth) + " ");
+        for (int c = 0; c < n; c++) {
+            System.out.printf("%" + cellWidth + "d", c);
         }
         System.out.println();
     }

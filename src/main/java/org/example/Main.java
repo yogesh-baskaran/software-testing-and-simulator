@@ -41,9 +41,6 @@ public class Main {
                 System.out.println("exiting...");
                 break;
             }
-            if (!command.equalsIgnoreCase("h")) {
-                robot.history.add(command);
-            }
             robot.executeCommand(command);
         }
         sc.close();
@@ -60,6 +57,11 @@ public class Main {
         this.history.clear();
     }
     private void execute(String cmd) {
+        if (!isInitialized() && !cmd.toLowerCase().startsWith("i")) {
+            System.out.println("please initialize first using: i n (e.g. i 5)");
+            return;
+        }
+
         if (cmd.equalsIgnoreCase("u")){
             penUp = true;
             System.out.println("pen up");
@@ -183,26 +185,21 @@ public class Main {
 
     private void replayHistory()
     {
-        List<String> temp = new ArrayList<>(history);
-        // Save current floor state instead of clearing it
-        int[][] savedFloor = new int[n][n];
-        for (int r = 0; r < n; r++) {
-            for (int c = 0; c < n; c++) {
-                savedFloor[r][c] = floor[r][c];
-            }
+        if (!isInitialized()) {
+            System.out.println("please initialize first using: i n (e.g. i 5)");
+            return;
         }
-        // Reset position and pen but NOT history or floor
-        int savedHistory = history.size();
-        int savedN = n;
-        this.row = 0;
-        this.col = 0;
-        this.direction = NORTH;
-        this.penUp = true;
-        this.floor = new int[n][n];
 
-        System.out.println(":):)");
+        if (history.isEmpty()) {
+            System.out.println("history is empty.");
+            return;
+        }
+
+        List<String> temp = new ArrayList<>(history);
+
+        System.out.println("History:");
         for (String command : temp) {
-            execute(command);
+            System.out.println(command);
         }
     }
     private String directionToString(){
@@ -227,7 +224,7 @@ public class Main {
                 p - print floor
                 c - current position
                 i n - initialize system with size n
-                h - replay history
+                h - show command history
                 q - quit
                 """);
     }
@@ -249,11 +246,30 @@ public class Main {
     }
 
     public void executeCommand(String cmd) {
-        // Add to history only if not replaying (not "h" command)
-        if (!cmd.equalsIgnoreCase("h")) {
-            history.add(cmd);
+        String normalized = cmd == null ? "" : cmd.trim();
+
+        // Persist only replayable robot actions; skip meta commands like init/print/history/status.
+        if (isReplayableCommand(normalized)) {
+            history.add(normalized);
         }
-        execute(cmd);
+        execute(normalized);
+    }
+
+    private boolean isReplayableCommand(String cmd) {
+        if (cmd.isEmpty()) {
+            return false;
+        }
+
+        String lower = cmd.toLowerCase();
+        return lower.equals("u")
+                || lower.equals("d")
+                || lower.equals("r")
+                || lower.equals("l")
+                || lower.matches("m\\d+");
+    }
+
+    private boolean isInitialized() {
+        return floor != null && n > 0;
     }
 
     public int getRow() {
